@@ -26,9 +26,9 @@ void loop() {
   int max_pwm = value2Str.toInt();
 
   // Print the received values
-  Serial.print(value1);
+  Serial.print(delay);
   Serial.print(",");
-  Serial.println(value2);
+  Serial.println(max_pwm);
 
 
   run_magnet_steady(delay, max_pwm, duration );
@@ -37,20 +37,20 @@ void loop() {
   Serial.println("Ready");
 }
 
-void run_magnet_increase(int delay, int max_pwm){
+void run_magnet_increase(int delayVal, int max_pwm){
 
-	for(int i = 0; i < max; i++){
-		analogWrite(MAGNET_1, max_pwm);
-		delay(delay);
+	for(int i = 0; i < max_pwm; i++){
+		analogWrite(MAGNET_1, i);
+		delay(delayVal);
 	}
 }
 
-void run_magnet_steady(int delay, int max_pwm, int duration){
+void run_magnet_steady(int delayVal, int max_pwm, int duration){
 	static int ts = millis();
 
 	while(millis() - ts < duration){
 		analogWrite(MAGNET_1, max_pwm);
-		delay(delay);
+		delay(delayVal);
 	}
 
 }

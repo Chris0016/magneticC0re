@@ -3,7 +3,7 @@ import time
 import random
 
 # Set up the serial connection
-ser = serial.Serial('/dev/ttyACM0', 9600)  # Change '/dev/ttyACM0' to the correct port for your Arduino
+ser = serial.Serial('/dev/tty0', 9600)  # Change '/dev/ttyACM0' to the correct port for your Arduino
 ser.flushInput()
 
 # Handshake signal from Arduino
@@ -17,25 +17,19 @@ def arduino_ready():
 # Send two random values to Arduino
 while True:
     try:
- 	# Generate Perlin noise value
-        delay = int(noise.pnoise1(time.time()) * 102.0 + 153.0)
-        # Ensure value is within the range of 50-255
-        delay = max(50, min(value, 255))        
-
-
-	# Generate two random numbers from 0 to 255
-        delay = random.randint(0, 255)
-        max_pwm = random.randint(0, 255)
+        # Generate two random numbers from 0 to 255
+        value1 = random.randint(0, 255)
+        value2 = random.randint(0, 255)
 
         # Send the values to Arduino
-        ser.write(str(delay).encode())
+        ser.write(str(value1).encode())
         ser.write(b',')
-        ser.write(str(max_pwm).encode())
+        ser.write(str(value2).encode())
         ser.write(b'\n')
 
         # Wait for Arduino confirmation
         if arduino_ready():
-            print("Arduino confirmed:", delay, max_pwm)
+            print("Arduino confirmed:", value1, value2)
         else:
             print("Arduino failed to confirm")
 
