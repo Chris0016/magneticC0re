@@ -1,0 +1,6 @@
+inoController:
+    Currently there is a transition between the current_pwm and target_pwm. 
+    Meaning the increases/decreases +/- 1 with a small delay in between so its smooth. 
+
+    Possible issue maybe that because the brain signals sampling occurs fast
+    
