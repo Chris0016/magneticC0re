@@ -31,6 +31,8 @@ unsigned long ts = millis();
 
 void setup() {
   pinMode(MAGNET_1, OUTPUT);
+  // analogWrite(MAGNET_1, 100); //Startup motor, for small first values it will not setup. 
+  // delay(2000);
   Serial.begin(9600);
  
 }

@@ -6,7 +6,34 @@ import math
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, LogLevels, BoardIds
 from brainflow.data_filter import DataFilter, AggOperations
 
+'''
+Channel 1: observed max 50
+channel 2: observed max 80
 
+'''
+
+##Change these values depending on channel, some channels only go up to 100
+BCI_UPPER_LIMIT = 51.0
+BCI_LOWER_LIMIT = 45.0
+SELECTED_CHANNEL = 2
+
+#TO BE DELETED?
+DELAY_LOWER_LIMIT = 150
+DELAY_UPPER_LIMIT = 100
+DELAY_STEP = 10
+#TO BE DELETED? variable delay creates a 'lag' between input and pwm shown. 
+
+PWM_LOWER_LIMIT = 20.0
+PWM_UPPER_LIMIT = 40.0
+PWM_STEP = 10
+
+DATA_ROWS = 15 
+
+#MIN_SLEEP = 2
+#MAX_SLEEP = 4
+#SLEEP_TIMER = max(MIN_SLEEP,  (DATA_ROWS % MAX_SLEEP)) #compute ideal sleep timer based on number of rows
+
+SLEEP_TIMER = 2
 
 # Handshake signal from Arduino
 def arduino_ready():
@@ -20,26 +47,16 @@ def arduino_ready():
                 print("\n Recived->>", response)
 
 
-DELAY_LOWER_LIMIT = 120
-DELAY_UPPER_LIMIT = 300
-DELAY_STEP = 10
 
-PWM_LOWER_LIMIT = 50
-PWM_UPPER_LIMIT = 170
-PWM_STEP = 10
-
-
-
-
-def send_data(isAtHigh):
+def send_data(pwmTarget):
        
     #delay = randomMultiple(DELAY_LOWER_LIMIT, DELAY_UPPER_LIMIT, DELAY_STEP)
     delay = 0 # having a constant delay value makes the transitions between pwms more controllable
-    pwmTarget = randomMultiple(PWM_LOWER_LIMIT, PWM_UPPER_LIMIT, PWM_STEP)
-
+    ##pwmTarget = randomMultiple(PWM_LOWER_LIMIT, PWM_UPPER_LIMIT, PWM_STEP)
+    ##pwmTarget = pwmTarget
     
     ##TESTING
-    
+
     # low = 15
     # high = 50
 
@@ -66,20 +83,15 @@ def randomMultiple(minimum, maximum, step):
 
 ### openBCI Connection ###
 
-DATA_ROWS = 15 
-MIN_SLEEP = 4
-MAX_SLEEP = 8
-SLEEP_TIMER = max(MIN_SLEEP,  (DATA_ROWS % MAX_SLEEP)) #compute ideal sleep timer based on number of rows
+#openBCI board setup
+BoardShim.enable_dev_board_logger()
+
+# use synthetic board for demo
+params = BrainFlowInputParams()
+board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, params)
 
 def get_board_data():
 
-    #openBCI board setup
-    BoardShim.enable_dev_board_logger()
-
-    # use synthetic board for demo
-    params = BrainFlowInputParams()
-    board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, params)
-    
     board.prepare_session()
     board.start_stream()
     BoardShim.log_message(LogLevels.LEVEL_INFO.value, 'start sleeping in the main thread')
@@ -108,15 +120,15 @@ def get_board_data():
 
         downsampled_data.append(downsampled_channel)
 
-    return downsampled_data
+    return data
 
 
 def linear_interpolation(lower_limit, upper_limit, a):
     return (upper_limit * (1 - a)) + (lower_limit * a)
 
 
-BCI_UPPER_LIMIT = 500
-SELECTED_CHANNEL = 1
+
+
 
 def process_bci_data(data):
  
@@ -124,13 +136,27 @@ def process_bci_data(data):
     channel = data[channel_num]
 
     abs_channel = [abs(ele) for ele in channel]
+    abs_channel.sort()
     channel_max_value =  abs_channel[len(abs_channel) - 1]
 
     print("\n channel: \n", channel, "\n")
     print("\n abs channel: \n", abs_channel, "\n")
     print("\n max value: ", channel_max_value, "\n")
     
-    return (channel_max_value / BCI_UPPER_LIMIT) * PWM_UPPER_LIMIT
+
+    diff = BCI_UPPER_LIMIT - BCI_LOWER_LIMIT
+    normalized_bci = (channel_max_value - BCI_LOWER_LIMIT) 
+
+
+    print("\ndiff: ", diff)
+    print("\nbci_normalized: ", normalized_bci)
+    print("\nupper limit:", BCI_UPPER_LIMIT)
+    print("\nlower limit:", BCI_LOWER_LIMIT)
+
+    return max( PWM_LOWER_LIMIT, ((normalized_bci / diff ) * PWM_UPPER_LIMIT) )
+
+
+    #return  ((channel_max_value / BCI_UPPER_LIMIT) * (PWM_UPPER_LIMIT - PWM_LOWER_LIMIT) ) + PWM_LOWER_LIMIT
 
 
 def get_pwm_value():
@@ -139,11 +165,7 @@ def get_pwm_value():
     downsampled_data = get_board_data()
     return process_bci_data(downsampled_data)
 
-
-
-
 #print(get_pwm_value())
-
 
 ### openBCI Connection ###
 
@@ -158,17 +180,13 @@ ser.open()
 time.sleep(5)
 
 def main():
-    ##TESTING
-    isAtHigh = True
-    ##TESTING
-
+   
     while True:
         try:
             # Wait for Arduino confirmation
             if arduino_ready():
                 print("Arduino Ready")
-                send_data(isAtHigh)
-                isAtHigh = not(isAtHigh)
+                send_data(get_pwm_value())
             else:
                 print("Waiting")
 
@@ -177,6 +195,12 @@ def main():
 
     # Close the serial connection
     ser.close()
+    # while True: 
+    #     try:
+    #         pwm = get_pwm_value()
+    #         print("pwm: ", pwm)
+    #     except KeyboardInterrupt:
+    #         break
 
 
 main()
