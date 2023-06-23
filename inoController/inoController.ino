@@ -22,8 +22,8 @@ static int curr_pwm = 0;
 
 static int flag = 1;  //Used for either moving up or down in pwm
 
-static int TARGET_PWM_HOLD_DURATION = 7000;  //Milliseconds, subject to change TODO tunning
-static int IDLE_DURATION = 5000;
+static int TARGET_PWM_HOLD_DURATION = 3000;  //Milliseconds, subject to change TODO tunning
+static int IDLE_DURATION = 50;
 
 unsigned long ts = millis();
 
@@ -125,7 +125,8 @@ void loop() {
         //Serial.println("STATE HOLD");
         analogWrite(MAGNET_1, curr_pwm);
         if ( (unsigned long)(millis() - ts) > TARGET_PWM_HOLD_DURATION) {
-          state = S_IDLE;
+          state = S_READ; //S_IDLE for testing 
+          
           ts = millis();  //TESTING
         }
         break;

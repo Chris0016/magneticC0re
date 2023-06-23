@@ -22,7 +22,11 @@ void loop() {
   // int commaIndex = values.indexOf(',');
   // String value1Str = values.substring(0, commaIndex);
   // String value2Str = values.substring(commaIndex + 1);
-  // int delay = value1Str.toInt();
+  // int delay =
+'''
+
+##Change these values depending on channel, some channels only go up to 100
+BCI_UPPER_LIMIT = .50 value1Str.toInt();
   // int max_pwm = value2Str.toInt();
 
   // // Print the received values
